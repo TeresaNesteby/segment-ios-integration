@@ -2,6 +2,7 @@
 #import <Kahuna/Kahuna.h>
 #import <Analytics/SEGAnalyticsUtils.h>
 #import "SEGKahunaDefines.h"
+#import <Analytics/SEGAnalytics.h>
 
 #define KAHUNA_NOT_STRING_NULL_EMPTY(obj) (obj != nil && [obj isKindOfClass:[NSString class]] && ![@"" isEqualToString:obj])
 
@@ -35,9 +36,17 @@
 - (id)initWithSettings:(NSDictionary *)settings
 {
     if (self = [super init]) {
+        if (!self.kahunaClass) {
+            self.kahunaClass = [Kahuna class];
+        }
+        
         self.settings = settings;
         NSString *apiKey = [self.settings objectForKey:@"apiKey"];
-        [Kahuna launchWithKey:apiKey];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wundeclared-selector"
+        [self.kahunaClass performSelector:@selector(setSDKWrapper:withVersion:) withObject:SEGMENT withObject:[SEGAnalytics version]];
+#pragma GCC diagnostic pop
+        [self.kahunaClass launchWithKey:apiKey];
 
         _kahunaCredentialsKeys = [NSSet setWithObjects:KAHUNA_CREDENTIAL_USERNAME,
                                                        KAHUNA_CREDENTIAL_EMAIL,
@@ -51,10 +60,14 @@
     return self;
 }
 
-- (void)identify:(NSString *)userId traits:(NSDictionary *)traits options:(NSDictionary *)options
+- (void)identify:(SEGIdentifyPayload *)payload {
+    [self identifyInternal:payload.userId traits:payload.traits];
+}
+
+- (void)identifyInternal:(NSString *)userId traits:(NSDictionary *)traits
 {
     NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
-    KahunaUserCredentials *credentials = [Kahuna createUserCredentials];
+    KahunaUserCredentials *credentials = [self.kahunaClass createUserCredentials];
     if (KAHUNA_NOT_STRING_NULL_EMPTY(userId)) {
         [credentials addCredential:KAHUNA_CREDENTIAL_USER_ID withValue:userId];
     }
@@ -90,18 +103,22 @@
     }
 
     NSError *error = nil;
-    [Kahuna loginWithCredentials:credentials error:&error];
+    [self.kahunaClass loginWithCredentials:credentials error:&error];
     if (error) {
         NSLog(@"Kahuna-Segment Login Error : %@", error.description);
     }
 
     // Track the attributes if we have any items in it.
     if (attributes.count > 0) {
-        [Kahuna setUserAttributes:attributes];
+        [self.kahunaClass setUserAttributes:attributes];
     }
 }
 
-- (void)track:(NSString *)event properties:(NSDictionary *)properties options:(NSDictionary *)options
+- (void)track:(SEGTrackPayload *)payload {
+    [self trackInternal:payload.event properties:payload.properties];
+}
+
+- (void)trackInternal:(NSString *)event properties:(NSDictionary *)properties
 {
     NSNumber *revenue = [SEGKahunaIntegration extractRevenue:properties withKey:@"revenue"];
     NSNumber *quantity = nil;
@@ -125,9 +142,9 @@
         long value = (long)([revenue doubleValue] * 100);
         long count = [quantity longValue];
 
-        [Kahuna trackEvent:event withCount:count andValue:value];
+        [self.kahunaClass trackEvent:event withCount:count andValue:value];
     } else {
-        [Kahuna trackEvent:event];
+        [self.kahunaClass trackEvent:event];
     }
 
     NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
@@ -151,7 +168,7 @@
 
     // If we have collected any attributes, then we will call the setUserAttributes API
     if (attributes.count > 0) {
-        [Kahuna setUserAttributes:attributes];
+        [self.kahunaClass setUserAttributes:attributes];
     }
 }
 
@@ -160,7 +177,7 @@
     id value = properties[KAHUNA_CATEGORY];
     if (value && ([value isKindOfClass:[NSString class]] || [value isKindOfClass:[NSNumber class]])) {
         [(*attributes)setValue:value forKey:KAHUNA_LAST_VIEWED_CATEGORY];
-        NSDictionary *existingAttributes = [Kahuna getUserAttributes];
+        NSDictionary *existingAttributes = [self.kahunaClass getUserAttributes];
         id categoriesViewed = [existingAttributes valueForKey:KAHUNA_CATEGORIES_VIEWED];
         if (categoriesViewed && [categoriesViewed isKindOfClass:[NSString class]]) {
             NSMutableArray *aryOfCategoriesViewed = [[categoriesViewed componentsSeparatedByString:@","] mutableCopy];
@@ -217,39 +234,57 @@
     }
 }
 
-- (void)screen:(NSString *)screenTitle properties:(NSDictionary *)properties options:(NSDictionary *)options
+- (void)screen:(SEGScreenPayload *)payload
+{
+    [self screenInternal:SEGEventNameForScreenTitle(payload.name) properties:payload.properties];
+}
+
+- (void)screenInternal:(NSString *)screenTitle properties:(NSDictionary *)properties
 {
     BOOL trackAllPages = [(NSNumber *)[self.settings objectForKey:@"trackAllPages"] boolValue];
     if (trackAllPages && KAHUNA_NOT_STRING_NULL_EMPTY(screenTitle)) {
         // Track the screen view as an event.
-        [self track:SEGEventNameForScreenTitle(screenTitle) properties:properties options:options];
+        [self trackInternal:screenTitle properties:properties];
     }
 }
 
 - (void)receivedRemoteNotification:(NSDictionary *)userInfo
 {
-    [Kahuna handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
+    // This method can be called in a background thread or the main thread. If the app is launched due to a push, then this method call
+    // comes in the background thread. But if the app is in background and the user clicks on the push, then this method
+    // is called on the main thread.
+    
+    if (_applicationDidBecomeActiveAtleastOnce) {
+        [self.kahunaClass handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
+    } else {
+        // If the application never became active and we get a remote notification, then we will handle the notification assuming application
+        // is Inactive.
+        [self.kahunaClass handleNotification:userInfo withApplicationState:UIApplicationStateInactive];
+    }
 }
 
 - (void)failedToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
-    [Kahuna handleNotificationRegistrationFailure:error];
+    [self.kahunaClass handleNotificationRegistrationFailure:error];
 }
 
 - (void)registeredForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
 {
-    [Kahuna setDeviceToken:deviceToken];
+    [self.kahunaClass setDeviceToken:deviceToken];
 }
 
 - (void)handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo
 {
-    [Kahuna handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
+    [self.kahunaClass handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
 }
 
 - (void)reset
 {
-    [Kahuna logout];
+    [self.kahunaClass logout];
 }
 
+- (void) applicationDidBecomeActive {
+    _applicationDidBecomeActiveAtleastOnce = true;
+}
 
 @end

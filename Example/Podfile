@@ -9,4 +9,5 @@ target 'Segment-Kahuna_Tests', :exclusive => true do
 
   pod 'Specta'
   pod 'Expecta'
+  pod 'OCMockito'
 end
