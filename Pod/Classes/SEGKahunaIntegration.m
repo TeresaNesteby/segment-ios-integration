@@ -250,17 +250,7 @@
 
 - (void)receivedRemoteNotification:(NSDictionary *)userInfo
 {
-    // This method can be called in a background thread or the main thread. If the app is launched due to a push, then this method call
-    // comes in the background thread. But if the app is in background and the user clicks on the push, then this method
-    // is called on the main thread.
-    
-    if (_applicationDidBecomeActiveAtleastOnce) {
-        [self.kahunaClass handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
-    } else {
-        // If the application never became active and we get a remote notification, then we will handle the notification assuming application
-        // is Inactive.
-        [self.kahunaClass handleNotification:userInfo withApplicationState:UIApplicationStateInactive];
-    }
+    [self handleActionWithIdentifier:nil forRemoteNotification:userInfo];
 }
 
 - (void)failedToRegisterForRemoteNotificationsWithError:(NSError *)error
@@ -275,7 +265,17 @@
 
 - (void)handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo
 {
-    [self.kahunaClass handleNotification:userInfo withApplicationState:[UIApplication sharedApplication].applicationState];
+    // This method can be called in a background thread or the main thread. If the app is launched due to a push, then this method call
+    // comes in the background thread. But if the app is in background and the user clicks on the push, then this method
+    // is called on the main thread.
+    
+    if (_applicationDidBecomeActiveAtleastOnce) {
+        [self.kahunaClass handleNotification:userInfo withActionIdentifier:identifier withApplicationState:[UIApplication sharedApplication].applicationState];
+    } else {
+        // If the application never became active and we get a remote notification, then we will handle the notification assuming application
+        // is Inactive.
+        [self.kahunaClass handleNotification:userInfo withActionIdentifier:identifier withApplicationState:UIApplicationStateInactive];
+    }
 }
 
 - (void)reset
