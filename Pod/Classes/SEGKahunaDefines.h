@@ -1,6 +1,8 @@
-
-// SEGKahunaDefines.h
-// Copyright (c) 2014 Segment.io. All rights reserved.
+//
+//  SEGKahunaDefines.h
+//
+//  Copyright (c) 2012-2016 Kahuna. All rights reserved.
+//
 
 #ifndef Analytics_SEGKahunaDefines_h
 #define Analytics_SEGKahunaDefines_h

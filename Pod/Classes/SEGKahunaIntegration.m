@@ -1,3 +1,9 @@
+//
+//  SEGKahunaIntegration.m
+//
+//  Copyright (c) 2012-2016 Kahuna. All rights reserved.
+//
+
 #import "SEGKahunaIntegration.h"
 #import <Kahuna/Kahuna.h>
 #import <Analytics/SEGAnalyticsUtils.h>

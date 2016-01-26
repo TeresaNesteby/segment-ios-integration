@@ -1,8 +1,7 @@
 //
 //  SEGKahunaIntegrationTests.m
-//  Analytics
 //
-//  Copyright (c) 2015 Segment.io. All rights reserved.
+//  Copyright (c) 2012-2016 Kahuna. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>
