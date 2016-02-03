@@ -1,3 +1,9 @@
+//
+//  SEGKahunaIntegrationFactory.m
+//
+//  Copyright (c) 2012-2016 Kahuna. All rights reserved.
+//
+
 #import "SEGKahunaIntegrationFactory.h"
 #import "SEGKahunaIntegration.h"
 
