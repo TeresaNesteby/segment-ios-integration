@@ -15,6 +15,7 @@
 #define MOCKITO_SHORTHAND
 #import <OCMockito/OCMockito.h>
 
+#define INIT_WITH_SETTINGS [_integration initWithSettings:@{ @"apiKey" : @"foo" }]
 
 @interface SEGKahunaIntegrationTests : XCTestCase
 
@@ -50,8 +51,7 @@
 
 - (void)testStart
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
-    
+    INIT_WITH_SETTINGS;
     [verifyCount(_kahunaClassMock, times(1)) launchWithKey:@"foo"];
 }
 
@@ -64,7 +64,7 @@
 
 - (void)testIdentify
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGIdentifyPayload *payload = [[SEGIdentifyPayload alloc]
                                    initWithUserId:@"foo"
                                    anonymousId:nil
@@ -80,7 +80,7 @@
 
 - (void)testIdentifyWithNoTraits
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGIdentifyPayload *payload = [[SEGIdentifyPayload alloc]
                                    initWithUserId:@"foo"
                                    anonymousId:nil
@@ -97,7 +97,7 @@
 
 - (void)testIdentifyWithNoCredentialsAndNoTraits
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGIdentifyPayload *payload = [[SEGIdentifyPayload alloc]
                                    initWithUserId:nil
                                    anonymousId:nil
@@ -114,19 +114,33 @@
 
 - (void)testIdentifyWithMultipleCredentialsAndTraits
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGIdentifyPayload *payload = [[SEGIdentifyPayload alloc]
                                    initWithUserId:@"foo"
                                    anonymousId:nil
                                    traits:@{ @"bar" : @"baz",
                                              KAHUNA_CREDENTIAL_EMAIL : @"segkah@gmail.com",
+                                             KAHUNA_CREDENTIAL_FACEBOOK : @"fb",
+                                             KAHUNA_CREDENTIAL_TWITTER : @"tw",
+                                             KAHUNA_CREDENTIAL_LINKEDIN : @"lnk",
+                                             KAHUNA_CREDENTIAL_USER_ID : @"uid",
+                                             KAHUNA_CREDENTIAL_GOOGLE_PLUS : @"gp",
+                                             KAHUNA_CREDENTIAL_INSTALL_TOKEN : @"it",
+                                             KAHUNA_CREDENTIAL_USERNAME : @"un",
                                              @"moon" : @"drake" } context:nil integrations:nil];
     
     [_integration identify:payload];
     
     // Verify that Add Credential was called twice on the KahunaCredentialsMock object.
     [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_USER_ID withValue:@"foo"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_USER_ID withValue:@"uid"];
     [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_EMAIL withValue:@"segkah@gmail.com"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_FACEBOOK withValue:@"fb"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_TWITTER withValue:@"tw"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_LINKEDIN withValue:@"lnk"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_GOOGLE_PLUS withValue:@"gp"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_INSTALL_TOKEN withValue:@"it"];
+    [verifyCount(_kahunaCredentialsMock, times(1)) addCredential:KAHUNA_CREDENTIAL_USERNAME withValue:@"un"];
     
     [[verifyCount(_kahunaClassMock, times(1)) withMatcher:anything() forArgument:1] loginWithCredentials:_kahunaCredentialsMock error:nil];
     [verifyCount(_kahunaClassMock, times(1)) setUserAttributes:@{ @"bar" : @"baz", @"moon" : @"drake" }];
@@ -134,7 +148,7 @@
 
 - (void)testTrack
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"foo"
                                                            properties:@{}
                                                               context:nil
@@ -146,7 +160,7 @@
 
 - (void)testTrackWithRevenueButNoQuantity
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"foo"
                                                            properties:@{ @"revenue" : @10 }
                                                               context:nil
@@ -160,7 +174,7 @@
 
 - (void)testTrackWithQuantityButNoRevenue
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"foo"
                                                            properties:@{ @"quantity" : @10 }
                                                               context:nil
@@ -174,7 +188,7 @@
 
 - (void)testTrackWithQuantityAndRevenue
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"foo"
                                                            properties:@{ @"revenue" : @10, @"quantity" : @4 }
                                                               context:nil
@@ -188,7 +202,7 @@
 
 - (void)testTrackWithQuantityRevenueAndProperties
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"foo"
                                                            properties:@{@"productId" : @"bar",
                                                                         @"quantity" : @10,
@@ -205,7 +219,7 @@
 
 - (void)testTrackWithPropertyViewedCategory
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:KAHUNA_VIEWED_PRODUCT_CATEGORY
                                                            properties:@{ KAHUNA_CATEGORY : @"shirts" }
                                                               context:nil
@@ -218,7 +232,7 @@
 
 - (void)testTrackWithPropertyViewedProduct
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:KAHUNA_VIEWED_PRODUCT
                                                            properties:@{ KAHUNA_NAME : @"gopher shirts" }
                                                               context:nil
@@ -234,7 +248,7 @@
 
 - (void)testTrackWithPropertyAddedProduct
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:KAHUNA_ADDED_PRODUCT
                                                            properties:@{ KAHUNA_NAME : @"gopher shirts" }
                                                               context:nil
@@ -248,7 +262,7 @@
 
 - (void)testTrackWithPropertyCompletedOrder
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:KAHUNA_COMPLETED_ORDER
                                                            properties:@{ KAHUNA_DISCOUNT : @15.0 }
                                                               context:nil
@@ -271,7 +285,7 @@
 
 - (void)testScreenWithNoTrackAllPagesSettings
 {
-    [_integration initWithSettings:@{ @"apiKey" : @"foo" }];
+    INIT_WITH_SETTINGS;
     SEGScreenPayload *payload = [[SEGScreenPayload alloc] initWithName:@"foo" properties:@{} context:nil integrations:nil];
     
     [_integration screen:payload];
