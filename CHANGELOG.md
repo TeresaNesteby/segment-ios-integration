@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 1.0.0 *(26th November, 2015)*
+Version 1.0.0 *(24th March, 2016)*
 -------------------------------------------
 *(Supports analytics-ios 3.0.1+ and Kahuna 2.3.1+)*
 

@@ -1,26 +1,31 @@
 Pod::Spec.new do |s|
   s.name             = "Segment-Kahuna"
   s.version          = "1.0.0"
-  s.summary          = "Kahuna Integration for Segment's analytics-ios library."
+  s.summary          = "Kahuna's segment wrapper for iOS library."
 
   s.description      = <<-DESC
-                       Analytics for iOS provides a single API that lets you
-                       integrate with over 100s of tools.
-
-                       This is the Kahuna integration for the iOS library.
+                       Kahuna's wrapper integration for Segment's analytics-ios library.
                        DESC
 
-  s.homepage         = "http://segment.com/"
-  s.license          =  { :type => 'MIT' }
-  s.author           = { "Segment" => "friends@segment.com" }
-  s.source           = { :git => "https://github.com/segment-integrations/analytics-ios-integration-kahuna.git", :tag => s.version.to_s }
-  s.social_media_url = 'https://twitter.com/segment'
+  s.homepage         = "http://kahuna.com/"
+  s.license      = {
+    :type => 'Commercial',
+    :text => <<-LICENSE
+              All text and design is copyright © 2012-2016 Kahuna, Inc.
+
+              All rights reserved.
+
+              http://www.kahuna.com/privacy/
+    LICENSE
+  }
+  s.author           = { "Kahuna" => "support@kahuna.com" }
+  s.source           = { :git => "https://github.com/Kahuna/segment-ios-integration.git", :tag => s.version.to_s }
 
   s.platform     = :ios, '8.0'
   s.requires_arc = true
 
   s.source_files = 'Pod/Classes/**/*'
 
-  s.dependency 'Analytics', '~> 3.0.3'
-  s.dependency 'Kahuna', '~> 2.3.1'
+  s.dependency 'Analytics'
+  s.dependency 'Kahuna'
 end

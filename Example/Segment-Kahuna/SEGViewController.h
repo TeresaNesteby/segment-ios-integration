@@ -2,8 +2,7 @@
 //  SEGViewController.h
 //  Segment-Kahuna
 //
-//  Created by Prateek Srivastava on 11/23/2015.
-//  Copyright (c) 2015 Prateek Srivastava. All rights reserved.
+//  Copyright (c) 2016 Kahuna,Inc. All rights reserved.
 //
 
 @import UIKit;
