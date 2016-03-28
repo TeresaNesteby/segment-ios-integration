@@ -167,6 +167,10 @@
         [intelligentEventProperties setValue:properties[eachKey] forKey:eachKey];
     }
     
+    //remove revenue/quantity keys as they have already been added above
+    [intelligentEventProperties removeObjectForKey:@"revenue"];
+    [intelligentEventProperties removeObjectForKey:@"quantity"];
+    
     if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT_CATEGORY] == NSOrderedSame) {
         [self addViewedProductCategoryElements:&attributes fromProperties:lowerCaseKeyProperties];
     } else if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT] == NSOrderedSame) {
@@ -188,11 +192,13 @@
     
     if (intelligentEventProperties.count > 0) {
         for (NSString *key in intelligentEventProperties) {
-            if (![kahunaEventBuilder.properties containsObject:key]) {
+            if (![kahunaEventBuilder.properties objectForKey:key]) {
                 [kahunaEventBuilder addProperty:key withValue:intelligentEventProperties[key]];
             }
         }
-        
+    }
+    
+    if (intelligentEventProperties.count > 0 || (revenue && quantity)) {
         [self.kahunaClass track:[kahunaEventBuilder build]];
     }
 }
