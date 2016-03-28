@@ -188,7 +188,9 @@
     
     if (intelligentEventProperties.count > 0) {
         for (NSString *key in intelligentEventProperties) {
-            [kahunaEventBuilder addProperty:key withValue:intelligentEventProperties[key]];
+            if (![kahunaEventBuilder.properties containsObject:key]) {
+                [kahunaEventBuilder addProperty:key withValue:intelligentEventProperties[key]];
+            }
         }
         
         [self.kahunaClass track:[kahunaEventBuilder build]];
