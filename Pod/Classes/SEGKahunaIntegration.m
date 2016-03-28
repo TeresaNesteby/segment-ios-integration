@@ -126,64 +126,6 @@
 
 - (void)trackInternal:(NSString *)event properties:(NSDictionary *)properties
 {
-    [self trackInternalWithUserAttributes:event properties:properties];
-    [self trackInternalWithIntelligentEvents:event properties:properties];
-}
-
-- (void)trackInternalWithUserAttributes:(NSString *)event properties:(NSDictionary *)properties {
-    NSNumber *revenue = [SEGKahunaIntegration extractRevenue:properties withKey:@"revenue"];
-    NSNumber *quantity = nil;
-    for (NSString *key in properties) {
-        if (!KAHUNA_NOT_STRING_NULL_EMPTY(key)) continue;
-        if ([key caseInsensitiveCompare:@"quantity"] == NSOrderedSame) {
-            id value = properties[key];
-            if ([value isKindOfClass:[NSString class]]) {
-                quantity = @([value longLongValue]);
-            } else if ([value isKindOfClass:[NSNumber class]]) {
-                quantity = value;
-            }
-            
-            break;
-        }
-    }
-    
-    // If we get revenue and quantity in the properties, then no matter what we will try to extract the numbers they hold and trackEvent with Count and Value.
-    if (revenue && quantity) {
-        // Get the count and value from quantity and revenue.
-        long value = (long)([revenue doubleValue] * 100);
-        long count = [quantity longValue];
-        
-        [self.kahunaClass trackEvent:event withCount:count andValue:value];
-    } else {
-        [self.kahunaClass trackEvent:event];
-    }
-    
-    NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
-    NSMutableDictionary *lowerCaseKeyProperties = [[NSMutableDictionary alloc] init];
-    
-    // Lower case all the keys and copy over the properties into a new dictionary.
-    for (NSString *eachKey in properties) {
-        if (!KAHUNA_NOT_STRING_NULL_EMPTY(eachKey)) continue;
-        [lowerCaseKeyProperties setValue:properties[eachKey] forKey:[eachKey lowercaseString]];
-    }
-    
-    if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT_CATEGORY] == NSOrderedSame) {
-        [self addViewedProductCategoryElements:&attributes fromProperties:lowerCaseKeyProperties];
-    } else if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT] == NSOrderedSame) {
-        [self addViewedProductElements:&attributes fromProperties:lowerCaseKeyProperties];
-    } else if ([event caseInsensitiveCompare:KAHUNA_ADDED_PRODUCT] == NSOrderedSame) {
-        [self addAddedProductElements:&attributes fromProperties:lowerCaseKeyProperties];
-    } else if ([event caseInsensitiveCompare:KAHUNA_COMPLETED_ORDER] == NSOrderedSame) {
-        [self addCompletedOrderElements:&attributes fromProperties:lowerCaseKeyProperties];
-    }
-    
-    // If we have collected any attributes, then we will call the setUserAttributes API
-    if (attributes.count > 0) {
-        [self.kahunaClass setUserAttributes:attributes];
-    }
-}
-
-- (void)trackInternalWithIntelligentEvents:(NSString *)event properties:(NSDictionary *)properties {
     NSNumber *revenue = [SEGKahunaIntegration extractRevenue:properties withKey:@"revenue"];
     NSNumber *quantity = nil;
     for (NSString *key in properties) {
@@ -201,34 +143,56 @@
     }
     
     KAHEventBuilder *kahunaEventBuilder = [KAHEventBuilder eventWithName:event];
+    
+    // If we get revenue and quantity in the properties, then no matter what we will try to extract the numbers they hold and trackEvent with Count and Value.
     if (revenue && quantity) {
         // Get the count and value from quantity and revenue.
         long value = (long)([revenue doubleValue] * 100);
         long count = [quantity longValue];
         
+        [self.kahunaClass trackEvent:event withCount:count andValue:value];
         [kahunaEventBuilder setPurchaseCount:count andPurchaseValue:value];
+    } else {
+        [self.kahunaClass trackEvent:event];
     }
     
+    NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary *intelligentEventProperties = [[NSMutableDictionary alloc] init];
     NSMutableDictionary *lowerCaseKeyProperties = [[NSMutableDictionary alloc] init];
     
     // Lower case all the keys and copy over the properties into a new dictionary.
     for (NSString *eachKey in properties) {
         if (!KAHUNA_NOT_STRING_NULL_EMPTY(eachKey)) continue;
         [lowerCaseKeyProperties setValue:properties[eachKey] forKey:[eachKey lowercaseString]];
+        [intelligentEventProperties setValue:properties[eachKey] forKey:eachKey];
     }
     
     if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT_CATEGORY] == NSOrderedSame) {
-        [self addViewedProductCategoryElementsToEventBuilder:&kahunaEventBuilder fromProperties:lowerCaseKeyProperties];
+        [self addViewedProductCategoryElements:&attributes fromProperties:lowerCaseKeyProperties];
     } else if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT] == NSOrderedSame) {
-        [self addViewedProductElementsToEventBuilder:&kahunaEventBuilder fromProperties:lowerCaseKeyProperties];
+        [self addViewedProductElements:&attributes fromProperties:lowerCaseKeyProperties];
     } else if ([event caseInsensitiveCompare:KAHUNA_ADDED_PRODUCT] == NSOrderedSame) {
-        [self addAddedProductElementsToEventBuilder:&kahunaEventBuilder fromProperties:lowerCaseKeyProperties];
+        [self addAddedProductElements:&attributes fromProperties:lowerCaseKeyProperties];
     } else if ([event caseInsensitiveCompare:KAHUNA_COMPLETED_ORDER] == NSOrderedSame) {
-        [self addCompletedOrderElementsToEventBuilder:&kahunaEventBuilder fromProperties:lowerCaseKeyProperties];
+        [self addCompletedOrderElements:&attributes fromProperties:lowerCaseKeyProperties];
     }
     
-    KAHEvent *kahunaEvent = [kahunaEventBuilder build];
-    [self.kahunaClass track:kahunaEvent];
+    // If we have collected any attributes, then we will call the setUserAttributes API
+    if (attributes.count > 0) {
+        [self.kahunaClass setUserAttributes:attributes];
+        
+        for (NSString *key in attributes) {
+            [intelligentEventProperties setValue:attributes[key] forKey:key];
+        }
+    }
+    
+    if (intelligentEventProperties.count > 0) {
+        for (NSString *key in intelligentEventProperties) {
+            [kahunaEventBuilder addProperty:key withValue:intelligentEventProperties[key]];
+        }
+        
+        [self.kahunaClass track:[kahunaEventBuilder build]];
+    }
 }
 
 - (void)screen:(SEGScreenPayload *)payload
@@ -283,61 +247,6 @@
 - (void) applicationDidBecomeActive {
     _applicationDidBecomeActiveAtleastOnce = true;
 }
-
-#pragma mark Intelligent Events
-
-- (void)addViewedProductCategoryElementsToEventBuilder:(KAHEventBuilder *__autoreleasing *)eventBuilder fromProperties:(NSDictionary *)properties
-{
-    id value = properties[KAHUNA_CATEGORY];
-    if (value && ([value isKindOfClass:[NSString class]] || [value isKindOfClass:[NSNumber class]])) {
-        if ([value isKindOfClass:[NSNumber class]]) {
-            value = [NSString stringWithFormat:@"%@", value];
-        }
-        
-        [(*eventBuilder) addProperty:KAHUNA_LAST_VIEWED_CATEGORY withValue:value];
-    } else {
-        // Since we do not have a category, we will store "none" for last view category and categories viewed list.
-        [(*eventBuilder) addProperty:KAHUNA_LAST_VIEWED_CATEGORY withValue:KAHUNA_NONE];
-    }
-}
-
-- (void)addViewedProductElementsToEventBuilder:(KAHEventBuilder *__autoreleasing *)eventBuilder fromProperties:(NSDictionary *)properties
-{
-    id kname = properties[KAHUNA_NAME];
-    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
-        [(*eventBuilder) addProperty:KAHUNA_LAST_PRODUCT_VIEWED_NAME withValue:kname];
-    }
-    
-    [self addViewedProductCategoryElementsToEventBuilder:eventBuilder fromProperties:properties];
-}
-
-- (void)addAddedProductElementsToEventBuilder:(KAHEventBuilder *__autoreleasing *)eventBuilder fromProperties:(NSDictionary *)properties
-{
-    id kname = properties[KAHUNA_NAME];
-    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
-        [(*eventBuilder) addProperty:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_NAME withValue:kname];
-    }
-    
-    id category = properties[KAHUNA_CATEGORY];
-    if (!KAHUNA_NOT_STRING_NULL_EMPTY(category)) {
-        category = KAHUNA_NONE;
-    }
-    
-    [(*eventBuilder) addProperty:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_CATEGORY withValue:category];
-}
-
-- (void)addCompletedOrderElementsToEventBuilder:(KAHEventBuilder *__autoreleasing *)eventBuilder fromProperties:(NSDictionary *)properties
-{
-    id discount = properties[KAHUNA_DISCOUNT];
-    
-    if (!discount || (![discount isKindOfClass:[NSString class]] && ![discount isKindOfClass:[NSNumber class]])) {
-        discount = @"0";
-    }
-    
-    [(*eventBuilder) addProperty:KAHUNA_LAST_PURCHASE_DISCOUNT withValue:[NSString stringWithFormat:@"%@", discount]];
-}
-
-#pragma mark UN-intelligent events
 
 - (void)addViewedProductCategoryElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
 {
