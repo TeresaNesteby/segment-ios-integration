@@ -150,26 +150,17 @@
         long value = (long)([revenue doubleValue] * 100);
         long count = [quantity longValue];
         
-        [self.kahunaClass trackEvent:event withCount:count andValue:value];
         [kahunaEventBuilder setPurchaseCount:count andPurchaseValue:value];
-    } else {
-        [self.kahunaClass trackEvent:event];
     }
     
     NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
-    NSMutableDictionary *intelligentEventProperties = [[NSMutableDictionary alloc] init];
     NSMutableDictionary *lowerCaseKeyProperties = [[NSMutableDictionary alloc] init];
     
     // Lower case all the keys and copy over the properties into a new dictionary.
     for (NSString *eachKey in properties) {
         if (!KAHUNA_NOT_STRING_NULL_EMPTY(eachKey)) continue;
         [lowerCaseKeyProperties setValue:properties[eachKey] forKey:[eachKey lowercaseString]];
-        [intelligentEventProperties setValue:properties[eachKey] forKey:eachKey];
     }
-    
-    //remove revenue/quantity keys as they have already been added above
-    [intelligentEventProperties removeObjectForKey:@"revenue"];
-    [intelligentEventProperties removeObjectForKey:@"quantity"];
     
     if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT_CATEGORY] == NSOrderedSame) {
         [self addViewedProductCategoryElements:&attributes fromProperties:lowerCaseKeyProperties];
@@ -184,21 +175,13 @@
     // If we have collected any attributes, then we will call the setUserAttributes API
     if (attributes.count > 0) {
         [self.kahunaClass setUserAttributes:attributes];
-        
-        for (NSString *key in attributes) {
-            [intelligentEventProperties setValue:attributes[key] forKey:key];
-        }
     }
     
-    if (intelligentEventProperties.count > 0) {
-        for (NSString *key in intelligentEventProperties) {
-            [kahunaEventBuilder addProperty:key withValue:intelligentEventProperties[key]];
-        }
+    for (NSString *key in properties) {
+        [kahunaEventBuilder addProperty:key withValue:properties[key]];
     }
     
-    if (intelligentEventProperties.count > 0 || (revenue && quantity)) {
-        [self.kahunaClass track:[kahunaEventBuilder build]];
-    }
+    [self.kahunaClass track:[kahunaEventBuilder build]];
 }
 
 - (void)screen:(SEGScreenPayload *)payload
