@@ -133,35 +133,35 @@
         if ([key caseInsensitiveCompare:@"quantity"] == NSOrderedSame) {
             id value = properties[key];
             if ([value isKindOfClass:[NSString class]]) {
-                quantity = [NSNumber numberWithLong:[value longLongValue]];
+                quantity = @([value longLongValue]);
             } else if ([value isKindOfClass:[NSNumber class]]) {
                 quantity = value;
             }
-
+            
             break;
         }
     }
-
+    
+    KAHEventBuilder *kahunaEventBuilder = [KAHEventBuilder eventWithName:event];
+    
     // If we get revenue and quantity in the properties, then no matter what we will try to extract the numbers they hold and trackEvent with Count and Value.
     if (revenue && quantity) {
         // Get the count and value from quantity and revenue.
         long value = (long)([revenue doubleValue] * 100);
         long count = [quantity longValue];
-
-        [self.kahunaClass trackEvent:event withCount:count andValue:value];
-    } else {
-        [self.kahunaClass trackEvent:event];
+        
+        [kahunaEventBuilder setPurchaseCount:count andPurchaseValue:value];
     }
-
+    
     NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
     NSMutableDictionary *lowerCaseKeyProperties = [[NSMutableDictionary alloc] init];
-
+    
     // Lower case all the keys and copy over the properties into a new dictionary.
     for (NSString *eachKey in properties) {
         if (!KAHUNA_NOT_STRING_NULL_EMPTY(eachKey)) continue;
         [lowerCaseKeyProperties setValue:properties[eachKey] forKey:[eachKey lowercaseString]];
     }
-
+    
     if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT_CATEGORY] == NSOrderedSame) {
         [self addViewedProductCategoryElements:&attributes fromProperties:lowerCaseKeyProperties];
     } else if ([event caseInsensitiveCompare:KAHUNA_VIEWED_PRODUCT] == NSOrderedSame) {
@@ -171,73 +171,17 @@
     } else if ([event caseInsensitiveCompare:KAHUNA_COMPLETED_ORDER] == NSOrderedSame) {
         [self addCompletedOrderElements:&attributes fromProperties:lowerCaseKeyProperties];
     }
-
+    
     // If we have collected any attributes, then we will call the setUserAttributes API
     if (attributes.count > 0) {
         [self.kahunaClass setUserAttributes:attributes];
     }
-}
-
-- (void)addViewedProductCategoryElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
-{
-    id value = properties[KAHUNA_CATEGORY];
-    if (value && ([value isKindOfClass:[NSString class]] || [value isKindOfClass:[NSNumber class]])) {
-        [(*attributes)setValue:value forKey:KAHUNA_LAST_VIEWED_CATEGORY];
-        NSDictionary *existingAttributes = [self.kahunaClass getUserAttributes];
-        id categoriesViewed = [existingAttributes valueForKey:KAHUNA_CATEGORIES_VIEWED];
-        if (categoriesViewed && [categoriesViewed isKindOfClass:[NSString class]]) {
-            NSMutableArray *aryOfCategoriesViewed = [[categoriesViewed componentsSeparatedByString:@","] mutableCopy];
-            if (![aryOfCategoriesViewed containsObject:value]) {
-                if (aryOfCategoriesViewed.count > 50) {
-                    [aryOfCategoriesViewed removeObjectAtIndex:0]; // Remove the first object.
-                }
-
-                [aryOfCategoriesViewed addObject:value];
-                [(*attributes)setValue:[aryOfCategoriesViewed componentsJoinedByString:@","] forKey:KAHUNA_CATEGORIES_VIEWED];
-            }
-        } else {
-            [(*attributes)setValue:value forKey:KAHUNA_CATEGORIES_VIEWED];
-        }
-    } else {
-        // Since we do not have a category, we will store "none" for last view category and categories viewed list.
-        [(*attributes)setValue:KAHUNA_NONE forKey:KAHUNA_LAST_VIEWED_CATEGORY];
-        [(*attributes)setValue:KAHUNA_NONE forKey:KAHUNA_CATEGORIES_VIEWED];
+    
+    for (NSString *key in properties) {
+        [kahunaEventBuilder addProperty:key withValue:properties[key]];
     }
-}
-
-- (void)addViewedProductElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
-{
-    id kname = properties[KAHUNA_NAME];
-    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
-        [(*attributes)setValue:kname forKey:KAHUNA_LAST_PRODUCT_VIEWED_NAME];
-    }
-
-    [self addViewedProductCategoryElements:attributes fromProperties:properties];
-}
-
-- (void)addAddedProductElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
-{
-    id kname = properties[KAHUNA_NAME];
-    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
-        [(*attributes)setValue:kname forKey:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_NAME];
-    }
-
-    id category = properties[KAHUNA_CATEGORY];
-    if (!KAHUNA_NOT_STRING_NULL_EMPTY(category)) {
-        category = KAHUNA_NONE;
-    }
-
-    [(*attributes)setValue:category forKey:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_CATEGORY];
-}
-
-- (void)addCompletedOrderElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
-{
-    id discount = properties[KAHUNA_DISCOUNT];
-    if ([discount isKindOfClass:[NSString class]] || [discount isKindOfClass:[NSNumber class]]) {
-        [(*attributes)setValue:discount forKey:KAHUNA_LAST_PURCHASE_DISCOUNT];
-    } else {
-        [(*attributes)setValue:@0 forKey:KAHUNA_LAST_PURCHASE_DISCOUNT];
-    }
+    
+    [self.kahunaClass track:[kahunaEventBuilder build]];
 }
 
 - (void)screen:(SEGScreenPayload *)payload
@@ -291,6 +235,68 @@
 
 - (void) applicationDidBecomeActive {
     _applicationDidBecomeActiveAtleastOnce = true;
+}
+
+- (void)addViewedProductCategoryElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
+{
+    id value = properties[KAHUNA_CATEGORY];
+    if (value && ([value isKindOfClass:[NSString class]] || [value isKindOfClass:[NSNumber class]])) {
+        [(*attributes)setValue:value forKey:KAHUNA_LAST_VIEWED_CATEGORY];
+        NSDictionary *existingAttributes = [self.kahunaClass getUserAttributes];
+        id categoriesViewed = [existingAttributes valueForKey:KAHUNA_CATEGORIES_VIEWED];
+        if (categoriesViewed && [categoriesViewed isKindOfClass:[NSString class]]) {
+            NSMutableArray *aryOfCategoriesViewed = [[categoriesViewed componentsSeparatedByString:@","] mutableCopy];
+            if (![aryOfCategoriesViewed containsObject:value]) {
+                if (aryOfCategoriesViewed.count > 50) {
+                    [aryOfCategoriesViewed removeObjectAtIndex:0]; // Remove the first object.
+                }
+                
+                [aryOfCategoriesViewed addObject:value];
+                [(*attributes)setValue:[aryOfCategoriesViewed componentsJoinedByString:@","] forKey:KAHUNA_CATEGORIES_VIEWED];
+            }
+        } else {
+            [(*attributes)setValue:value forKey:KAHUNA_CATEGORIES_VIEWED];
+        }
+    } else {
+        // Since we do not have a category, we will store "none" for last view category and categories viewed list.
+        [(*attributes)setValue:KAHUNA_NONE forKey:KAHUNA_LAST_VIEWED_CATEGORY];
+        [(*attributes)setValue:KAHUNA_NONE forKey:KAHUNA_CATEGORIES_VIEWED];
+    }
+}
+
+- (void)addViewedProductElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
+{
+    id kname = properties[KAHUNA_NAME];
+    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
+        [(*attributes)setValue:kname forKey:KAHUNA_LAST_PRODUCT_VIEWED_NAME];
+    }
+    
+    [self addViewedProductCategoryElements:attributes fromProperties:properties];
+}
+
+- (void)addAddedProductElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
+{
+    id kname = properties[KAHUNA_NAME];
+    if (KAHUNA_NOT_STRING_NULL_EMPTY(kname)) {
+        [(*attributes)setValue:kname forKey:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_NAME];
+    }
+    
+    id category = properties[KAHUNA_CATEGORY];
+    if (!KAHUNA_NOT_STRING_NULL_EMPTY(category)) {
+        category = KAHUNA_NONE;
+    }
+    
+    [(*attributes)setValue:category forKey:KAHUNA_LAST_PRODUCT_ADDED_TO_CART_CATEGORY];
+}
+
+- (void)addCompletedOrderElements:(NSMutableDictionary *__autoreleasing *)attributes fromProperties:(NSDictionary *)properties
+{
+    id discount = properties[KAHUNA_DISCOUNT];
+    if ([discount isKindOfClass:[NSString class]] || [discount isKindOfClass:[NSNumber class]]) {
+        [(*attributes)setValue:discount forKey:KAHUNA_LAST_PURCHASE_DISCOUNT];
+    } else {
+        [(*attributes)setValue:@0 forKey:KAHUNA_LAST_PURCHASE_DISCOUNT];
+    }
 }
 
 @end
