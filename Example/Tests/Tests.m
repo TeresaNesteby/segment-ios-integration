@@ -155,7 +155,8 @@
                                                          integrations:nil];
     
     [_integration track:payload];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testTrackWithRevenueButNoQuantity
@@ -168,7 +169,8 @@
     
     [_integration track:payload];
     
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
     [verifyCount(_kahunaClassMock, never()) trackEvent:@"foo" withCount:anything() andValue:anything()];
 }
 
@@ -182,7 +184,8 @@
     
     [_integration track:payload];
     
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo"];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
     [verifyCount(_kahunaClassMock, never()) trackEvent:@"foo" withCount:anything() andValue:anything()];
 }
 
@@ -197,7 +200,8 @@
     [_integration track:payload];
     
     [verifyCount(_kahunaClassMock, never()) trackEvent:anything()];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo" withCount:4 andValue:1000];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo" withCount:4 andValue:1000];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testTrackWithQuantityRevenueAndProperties
@@ -214,7 +218,8 @@
     
     [_integration track:payload];
     
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo" withCount:10 andValue:500];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"foo" withCount:10 andValue:500];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testTrackWithPropertyViewedCategory
@@ -227,7 +232,8 @@
     [_integration track:payload];
     
     [verifyCount(_kahunaClassMock, times(1)) setUserAttributes:@{KAHUNA_LAST_VIEWED_CATEGORY : @"shirts", KAHUNA_CATEGORIES_VIEWED : @"shirts" }];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_VIEWED_PRODUCT_CATEGORY];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_VIEWED_PRODUCT_CATEGORY];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testTrackWithPropertyViewedProduct
@@ -242,7 +248,8 @@
     [verifyCount(_kahunaClassMock, times(1)) setUserAttributes:@{KAHUNA_LAST_PRODUCT_VIEWED_NAME : @"gopher shirts",
                                                                  KAHUNA_CATEGORIES_VIEWED : KAHUNA_NONE,
                                                                  KAHUNA_LAST_VIEWED_CATEGORY : KAHUNA_NONE }];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_VIEWED_PRODUCT];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_VIEWED_PRODUCT];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
     
 }
 
@@ -257,7 +264,8 @@
     
     [verifyCount(_kahunaClassMock, times(1)) setUserAttributes:@{KAHUNA_LAST_PRODUCT_ADDED_TO_CART_NAME : @"gopher shirts",
                                                                  KAHUNA_LAST_PRODUCT_ADDED_TO_CART_CATEGORY : KAHUNA_NONE }];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_ADDED_PRODUCT];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_ADDED_PRODUCT];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testTrackWithPropertyCompletedOrder
@@ -270,7 +278,8 @@
     [_integration track:payload];
     
     [verifyCount(_kahunaClassMock, times(1)) setUserAttributes:@{KAHUNA_LAST_PURCHASE_DISCOUNT : @15.0 }];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_COMPLETED_ORDER];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:KAHUNA_COMPLETED_ORDER];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testScreen
@@ -280,7 +289,8 @@
     SEGScreenPayload *payload = [[SEGScreenPayload alloc] initWithName:@"foo" properties:@{} context:nil integrations:nil];
     
     [_integration screen:payload];
-    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"Viewed foo Screen"];
+//    [verifyCount(_kahunaClassMock, times(1)) trackEvent:@"Viewed foo Screen"];
+    [verifyCount(_kahunaClassMock, times(1)) track:anything()];
 }
 
 - (void)testScreenWithNoTrackAllPagesSettings
