@@ -2,7 +2,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 
 ## Without use_frameworks!
 target 'Segment-Kahuna_Example' do
-     Use default subspec
+    # Use default subspec
     pod "Segment-Kahuna", :path => "../"
 
 end
