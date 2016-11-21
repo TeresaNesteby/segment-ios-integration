@@ -1,13 +1,36 @@
 source 'https://github.com/CocoaPods/Specs.git'
 
-target 'Segment-Kahuna_Example', :exclusive => true do
-  pod "Segment-Kahuna", :path => "../"
+## Without use_frameworks!
+target 'Segment-Kahuna_Example' do
+     Use default subspec
+    pod "Segment-Kahuna", :path => "../"
+
 end
 
-target 'Segment-Kahuna_Tests', :exclusive => true do
+target 'Segment-Kahuna_Tests' do
   pod "Segment-Kahuna", :path => "../"
 
   pod 'Specta'
   pod 'Expecta'
   pod 'OCMockito'
 end
+
+
+## With use_frameworks!
+# Use only 'Segment-Kahuna/StaticLibWorkaround'
+
+#use_frameworks!
+#
+#target 'Segment-Kahuna_Example' do
+#    pod 'Segment-Kahuna/StaticLibWorkaround', :path => '../'
+#    pod 'Kahuna'
+#
+#end
+#
+#target 'Segment-Kahuna_Tests' do
+#    inherit! :search_paths
+#
+#    pod 'Specta'
+#    pod 'Expecta'
+#    pod 'OCMockito'
+#end
