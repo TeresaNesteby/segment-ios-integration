@@ -7,10 +7,28 @@ Kahuna integration for analytics-ios.
 
 ## Installation
 
-Segment-Kahuna Wrapper is available through [CocoaPods](http://cocoapods.org). To install
-it, simply add the following line to your `Podfile`:
+To install the Segment-Kahuna integration, simply add this line to your [CocoaPods](http://cocoapods.org) `Podfile`:
 
 ```ruby
 pod "Segment-Kahuna"
 ```
 
+## Usage
+
+After adding the dependency, you must register the integration.  To do this, import the Kahuna integration in your `AppDelegate`:
+
+```
+#import <Segment-Kahuna/SEGKahunaIntegrationFactory.h>
+```
+
+And add the following lines:
+
+```
+NSString *const SEGMENT_WRITE_KEY = @" ... ";
+SEGAnalyticsConfiguration *config = [SEGAnalyticsConfiguration configurationWithWriteKey:SEGMENT_WRITE_KEY];
+
+[config use:[SEGKahunaIntegrationFactory instance]];
+
+[SEGAnalytics setupWithConfiguration:config];
+
+```
