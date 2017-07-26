@@ -32,3 +32,4 @@ SEGAnalyticsConfiguration *config = [SEGAnalyticsConfiguration configurationWith
 [SEGAnalytics setupWithConfiguration:config];
 
 ```
+Please see [our documentation](https://segment.com/docs/integrations/kahuna/) for more information.
